@@ -160,7 +160,7 @@ std::string Date::toFormattedStringLocal(bool showMicroSeconds) const
 }
 
 std::string Date::toCustomedFormattedStringLocal(const std::string &fmtStr, 
-                                                 bool showMicroSeconds = false) const
+                                                 bool showMicroSeconds) const
 {
     char buff[256] = {0};
     time_t second = 

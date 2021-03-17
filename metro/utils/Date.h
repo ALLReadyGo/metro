@@ -6,7 +6,7 @@
 namespace metro
 {
 
-constexpr int kMicroSecondPerSec = 1000000;
+constexpr uint64_t kMicroSecondPerSec = 1000000;
 
 class Date
 {
@@ -33,7 +33,7 @@ class Date
 
     static const Date now()
     {
-        return Date::now();
+        return Date::date();
     }
 
     const Date after(double second) const;
