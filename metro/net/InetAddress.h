@@ -88,5 +88,4 @@ class InetAddress
     bool isIpv6_ = false;
 };
 
-
 }
