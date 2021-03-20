@@ -1,10 +1,12 @@
 #pragma once
 #include "metro/net/Channel.h"
-#include "metro/net/EventLoop.h"
 #include "metro/utils/NonCopyable.h"
+#include <vector>
 namespace metro
 {
 
+class EventLoop;
+using ChannelList = std::vector<Channel *>;
 class Poller : public NonCopyable
 {
   public:

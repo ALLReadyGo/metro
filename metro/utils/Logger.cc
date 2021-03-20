@@ -1,5 +1,5 @@
 #include "metro/utils/Logger.h"
-#include "assert.h"
+#include "cassert"
 #include <sys/syscall.h>
 #include <unistd.h>
 
@@ -36,7 +36,9 @@ LogStream &operator<<(LogStream &ls, const Logger::SourceFile &sf)
 
 void Logger::formatLogHead()
 {
-    uint64_t date_round_second = date_.roundSecond().microSecondsSinceEpoch();
+    uint64_t date_round_second = date_.secondsSinceEpoch();
+    uint64_t date_round_second_microsecond = 
+        date_.microSecondsSinceEpoch() - date_.roundSecond().microSecondsSinceEpoch();
     if(lastSecond_ != date_round_second)
     {
         lastSecond_ = date_round_second;
@@ -49,7 +51,7 @@ void Logger::formatLogHead()
     snprintf(tmp,
              sizeof(tmp), 
              ".%06lu UTC ", 
-             (date_.microSecondsSinceEpoch() - date_round_second));
+             (date_round_second_microsecond));
     logStream_ << assertFixSize(tmp, 12);
     if(threadId_ == 0)
     {

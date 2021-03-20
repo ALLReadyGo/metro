@@ -1,6 +1,6 @@
 #include <metro/net/inner/Poller/EpollPoller.h>
 #include <unistd.h>
-#include <assert.h>
+#include <cassert>
 #include <cstring>
 #include <metro/utils/Logger.h>
 

@@ -149,7 +149,7 @@ class Channel : public NonCopyable
 
     friend class EpollPoller;
     friend void Test();             // Test:
-
+    friend class EventLoop;
     void update();
     void handleEvent();
     void handleEventFree();

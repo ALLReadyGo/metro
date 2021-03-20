@@ -1,31 +1,22 @@
-#include "metro/net/inner/Poller.h"
-#include "metro/net/Channel.h"
 #include "metro/net/EventLoop.h"
-#include "metro/net/inner/Poller/EpollPoller.h"
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <unistd.h>
+#include "metro/net/Channel.h"
+#include <sys/unistd.h>
+#include <sys/fcntl.h>
 
-
-
-/* 
-g++ -g metro/net/Channel.cc metro/net/inner/Poller.cc metro/net/inner/Poller/EpollPoller.cc metro/utils/Logger.cc metro/utils/Date.cc metro/utils/LogStream.cc metro/tests/Poller_Channel_Test/Poller_Channel_Test.cc -I./ 
+using namespace metro;
+/*
+g++ -g metro/net/Channel.cc metro/net/inner/Poller.cc metro/net/inner/Poller/EpollPoller.cc metro/utils/Logger.cc metro/utils/Date.cc metro/utils/LogStream.cc  metro/net/inner/Timer.cc metro/net/inner/TimerQueue.cc metro/net/EventLoop.cc metro/tests/EventLoop_Test/EventLoop_Test.cc  -I./ 
 */
-namespace metro
-{
-
 void Test()
 {
-    EventLoop *loop = new EventLoop();
-    EpollPoller* poller =  new EpollPoller(loop);
+    EventLoop loop;
+    int f1_fd = open("../metro/tests/EventLoop_Test/f1", O_RDWR);
+    int f2_fd = open("../metro/tests/EventLoop_Test/f2", O_RDWR);
+    int f3_fd = open("../metro/tests/EventLoop_Test/f3", O_RDWR);
 
-    int f1_fd = open("../metro/tests/Poller_Channel_Test/f1", O_RDWR);
-    int f2_fd = open("../metro/tests/Poller_Channel_Test/f2", O_RDWR);
-    int f3_fd = open("../metro/tests/Poller_Channel_Test/f3", O_RDWR);
-
-    Channel channel_f1(loop, f1_fd);
-    Channel channel_f2(loop, f2_fd);
-    Channel channel_f3(loop, f3_fd);
+    Channel channel_f1(&loop, f1_fd);
+    Channel channel_f2(&loop, f2_fd);
+    Channel channel_f3(&loop, f3_fd);
 
     {
         /* f1 */
@@ -49,9 +40,8 @@ void Test()
         channel_f2.setEventCallBack([](){
                                     std::cout << "f2 EventCallBack" << std::endl;
                                         });
-                                    
-        channel_f2.setReadCallBack([](){
-                                    std::cout << "f2 ReadCallBack" << std::endl;
+                 
+        channel_f2.setReadCallBack([channel_ptr = &channel_f2](){                               
                                         });
 
         channel_f2.setWriteCallBack([](){
@@ -82,49 +72,42 @@ void Test()
 
     }
     
-    channel_f1.enableWriting();
-    channel_f2.enableWriting();
+    channel_f1.enableWriting();     // 持续触发
+    channel_f2.enableWriting();     
     channel_f3.enableReading();
 
-    poller->updateChannel(&channel_f1);
-    poller->updateChannel(&channel_f2);
-    poller->updateChannel(&channel_f3);
-    
+    loop.runAfter(1, [cf1_ptr = &channel_f1](){
+        cf1_ptr->disableAll();
+    });
 
+    loop.runAfter(2, [cf2_ptr = &channel_f2](){
+        cf2_ptr->disableAll();
+    });
+    loop.runAfter(3, [cf3_ptr = &channel_f3](){
+        cf3_ptr->disableAll();
+    });
 
-    ChannelList list;
-    poller->poll(10000, list);
-    for(int i = 0; i < list.size(); ++i)
-    {
-        list[i]->handleEvent();
-    }
+    // loop.runAfter(1, [](){
+    //     std::cout << "run after 1 second called" << std::endl;
+    // });
+    // loop.runAfter(2, [](){
+    //     std::cout << "run after 2 second called" << std::endl;
+    // });
+    // loop.runAfter(3, [](){
+    //     std::cout << "run after 3 second called" << std::endl;
+    // });
 
-    /* 测试删除 */
-    channel_f1.events_ = 0;
-    channel_f2.events_ = 0;
-    channel_f3.events_ = 0;
+    // loop.runEvery(1,[](){
+    //     std::cout << "every 1 second called" << std::endl;
+    // });
 
-    poller->updateChannel(&channel_f1);
-    std::cout << channel_f1.index_ << std::endl;
-    poller->updateChannel(&channel_f2);
-    std::cout << channel_f2.index_ << std::endl;
-    poller->updateChannel(&channel_f3);
-    std::cout << channel_f3.index_ << std::endl;
-
-    poller->removeChannel(&channel_f1);
-    std::cout << channel_f1.index_ << std::endl;
-    poller->removeChannel(&channel_f2);
-    std::cout << channel_f2.index_ << std::endl;
-    poller->removeChannel(&channel_f3);
-    std::cout << channel_f3.index_ << std::endl;
+    loop.loop();
 
 }
-}
 
-using namespace metro;
 
 int main(int argc, char const *argv[])
-{
+{   
     Test();
     return 0;
 }
