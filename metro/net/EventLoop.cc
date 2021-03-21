@@ -253,8 +253,8 @@ void EventLoop::removeChannel(Channel *channel)
 void EventLoop::wakeup()
 {
     uint64_t tmp = 1;
-    if(!looping_)
-        return;
+    // if(!looping_)
+    //     return;
     write(wakeupFd_, &tmp, sizeof(tmp));
 }
 
