@@ -64,6 +64,16 @@ class Channel : public NonCopyable
         eventCallBack_ = std::move(cb);
     }
 
+    void setCloseCallBack(const EventCallBack &cb)
+    {
+        closeCallBack_ = cb;
+    }
+
+    void setCloseCallBack(EventCallBack &&cb)
+    {
+        closeCallBack_ = std::move(cb);
+    }
+
 
     int fd() const
     {
@@ -124,7 +134,7 @@ class Channel : public NonCopyable
 
     void disableWriting()
     {
-        events_ |= kWriteEvent;
+        events_ |= ~kWriteEvent;
         update();
     }
 

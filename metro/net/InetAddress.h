@@ -1,4 +1,4 @@
-
+#pragma once
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <string>
@@ -10,13 +10,15 @@ namespace metro
 class InetAddress
 {
   public:
-    InetAddress(uint16_t port,
+    InetAddress(uint16_t port = 0,
                 bool loopbackOnly = false, 
                 bool ipv6 = false);
 
     InetAddress(const std::string &ip, 
                 u_int16_t port, 
                 bool ipv6 = false);
+
+    InetAddress(const InetAddress&) = default;
 
     explicit InetAddress(const sockaddr_in &addr)
       : addr_(addr) 
@@ -53,10 +55,10 @@ class InetAddress
         return reinterpret_cast<const struct sockaddr *>(&addr_);
     }
 
-    void setSockAddr6(const struct sockaddr_in6* addr6)
+    void setSockAddr6(const struct sockaddr_in6& addr6)
     {
-        addr6_ = *addr6;
-        isIpv6_ = addr6->sin6_family == AF_INET6;
+        addr6_ = addr6;
+        isIpv6_ = (addr6.sin6_family == AF_INET6);
     }
 
     void setSockAddr(const struct sockaddr_in *addr)
