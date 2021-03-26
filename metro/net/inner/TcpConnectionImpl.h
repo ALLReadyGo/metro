@@ -15,6 +15,7 @@ class TcpConnectionImpl : public TcpConnection,
                           public NonCopyable,
                           public std::enable_shared_from_this<TcpConnectionImpl>
 {
+    friend class TcpServer;
   public:
     TcpConnectionImpl(EventLoop *loop,
                       int sockfd,
@@ -78,7 +79,7 @@ class TcpConnectionImpl : public TcpConnection,
         socketPtr_->setTcpNoDelay(on);
     }
 
-    
+    void connectDestroyed();
 
     virtual void shutdown() override;
 

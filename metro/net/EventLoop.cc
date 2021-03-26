@@ -29,7 +29,7 @@ EventLoop::EventLoop()
 {
     tloopInThisThread = this;
     wakeupChannelPtr_ = std::make_unique<Channel>(this, wakeupFd_);
-    wakeupChannelPtr_->setReadCallBack(std::bind(&EventLoop::wakeupFd_, this));
+    wakeupChannelPtr_->setReadCallBack(std::bind(&EventLoop::wakeupRead, this));
     wakeupChannelPtr_->enableReading();
 }
 
@@ -60,6 +60,7 @@ void EventLoop::loop()
 
 void EventLoop::doRunInLoopFuncs()
 {
+    
     while(!func_.empty())
     {
         Func fun;

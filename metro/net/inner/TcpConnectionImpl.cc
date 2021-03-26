@@ -227,6 +227,19 @@ void TcpConnectionImpl::handleClose()
         closeCallback_(guardThis);
 }
 
+void TcpConnectionImpl::connectDestroyed()
+{
+    loop_->assertInLoopThread();
+    if (status_ == ConnStatus::Connected)
+    {
+        status_ = ConnStatus::DisConnected;
+        ioChannelPtr_->disableAll();
+
+        connectionCallback_(shared_from_this());
+    }
+    ioChannelPtr_->remove();
+}
+
 void TcpConnectionImpl::handleError()
 {
     int err = socketPtr_->getSocketError();
@@ -340,7 +353,6 @@ void TcpConnectionImpl::sendInLoop(const char *buff, size_t length)
                 writeBufferList_.back()->msgBuffer_->readableBytes());
         }
     }
-    std::cout << "sendInLoop end" << std::string(buff, length) << std::endl;
 }
 
 void TcpConnectionImpl::send(const char *msg, size_t len)
