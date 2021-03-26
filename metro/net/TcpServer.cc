@@ -64,7 +64,7 @@ void TcpServer::start()
     loop_->runInLoop([this]() {
         assert(!started_);
         started_ = true;
-        if (idleTimeOut_ > 0)
+        if(idleTimeOut_ > 0)
         {
             timingWheelMap_[loop_] =
                 std::make_shared<TimingWheel>(loop_,
@@ -73,7 +73,7 @@ void TcpServer::start()
                                               idleTimeOut_ < 500
                                                   ? idleTimeOut_ + 1
                                                   : 100);
-            if (loopPoolPtr_)
+            if(loopPoolPtr_)
             {
                 auto loopNum = loopPoolPtr_->size();
                 while (loopNum > 0)

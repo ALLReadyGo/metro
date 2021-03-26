@@ -134,7 +134,7 @@ void Connector::handleWrite()
                 errorCallback_();
             }
         }
-        else if (Socket::isSelfConnect(sockfd))         // TODO:这个是什么现象
+        else if (Socket::isSelfConnect(sockfd))         
         {
             if (retry_)
             {
