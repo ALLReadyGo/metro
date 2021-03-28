@@ -31,7 +31,7 @@ void EpollPoller::poll(int timeoutMs, ChannelList &cl)
         fillActiveChannels(num_events, cl);
         if(num_events == events_.size())
         {
-            events_.resize(events_.size() * 2);
+            events_.resize(events_.size() * 2);             // 这里有一个内存分配，可以用于提高内存利用效率
         }
     }
     else if(num_events == 0) 
@@ -50,7 +50,7 @@ void EpollPoller::poll(int timeoutMs, ChannelList &cl)
 void EpollPoller::updateChannel(Channel *channel)
 {
     const int index = channel->index();
-    if(index == kNew || index == kDeleted)
+    if(index == kNew || index == kDeleted)                          // index = kNew or kDeleted 表示其已经从poll中移除，此时对EPOLL的操作为CTL_ADD
     {
         const int fd = channel->fd();
         if(index == kNew)
@@ -64,7 +64,7 @@ void EpollPoller::updateChannel(Channel *channel)
             assert(channels_[fd] == channel);
         }
         channel->setIndex(kAdded);
-        update(EPOLL_CTL_ADD, channel);
+        update(EPOLL_CTL_ADD, channel);                        
         
     }
     else if(index == kAdded)
@@ -72,21 +72,21 @@ void EpollPoller::updateChannel(Channel *channel)
         const int fd = channel->fd();
         assert(channels_.find(fd) != channels_.end());
         assert(channels_[fd] == channel);
-        if(channel->isNoneEvent())
+        if(channel->isNoneEvent())                                // events什么都不监听时，会从poll中删除
         {
             channel->setIndex(kDeleted);
-            update(EPOLL_CTL_DEL, channel);
+            update(EPOLL_CTL_DEL, channel);                         
         }
         else
         {
-            update(EPOLL_CTL_MOD, channel);
+            update(EPOLL_CTL_MOD, channel);                       // 调用MOD
         }
     }
 }
 
 void EpollPoller::removeChannel(Channel *channel)
 {
-    const int fd = channel->fd();
+    const int fd = channel->fd();                                 // 这部分代码全部都用于Debug，能够让我们发现在运行时的代码潜在Bug
     const int index = channel->index();
     assert(index == kAdded || index == kDeleted);
     assert(channels_.find(fd) != channels_.end());
@@ -119,7 +119,7 @@ void EpollPoller::update(int op, Channel *channel)
     const int fd = channel->fd();
     event.events = channel->events();
     event.data.ptr = channel;
-    if(epoll_ctl(epollfd_, op, fd, &event) < 0)
+    if(epoll_ctl(epollfd_, op, fd, &event) < 0)            // 调用epoll的epoll_ctl
     {
         LOG_FATAL << "epoll error\n";
     }

@@ -18,19 +18,19 @@ static int creatEventFd()
 
 constexpr int kPollTimeMs = 10000;
 
-thread_local EventLoop *tloopInThisThread = nullptr;
+thread_local EventLoop *tloopInThisThread = nullptr;                                        // 表示此线程中绑定的EventLoop，保证只能在EventLoop所属线程中运行相关函数
 
 EventLoop::EventLoop()
   : threadId_(std::this_thread::get_id()),
     poller_(Poller::newPoller(this)),
     wakeupFd_(creatEventFd()),
     threadLocalLoopPtr_(&tloopInThisThread),
-    timerQueue_(new TimerQueue(this))
+    timerQueue_(new TimerQueue(this))                                                       // poller中设置了监听timerfd
 {
     tloopInThisThread = this;
     wakeupChannelPtr_ = std::make_unique<Channel>(this, wakeupFd_);
-    wakeupChannelPtr_->setReadCallBack(std::bind(&EventLoop::wakeupRead, this));
-    wakeupChannelPtr_->enableReading();
+    wakeupChannelPtr_->setReadCallBack(std::bind(&EventLoop::wakeupRead, this));            // 此处注意设置的callback函数，用于清除eventfd的激活标志
+    wakeupChannelPtr_->enableReading();                                                     // poller中插入了监听eventfd
 }
 
 void EventLoop::loop()
@@ -40,25 +40,25 @@ void EventLoop::loop()
     looping_ = true;
     quit_ = false;
 
-    while(!quit_)
+    while(!quit_)                                           // 每次循环都会检查quit，判断是否退出
     {
-        activedChannels_.clear();
-        poller_->poll(kPollTimeMs, activedChannels_);
+        activedChannels_.clear();                           
+        poller_->poll(kPollTimeMs, activedChannels_);       // 调用poll方法，获取所有的激活channel
 
         eventHandling_ = true;
         for(auto channl : activedChannels_)
         {
             currentChannel = channl;
-            currentChannel->handleEvent();
+            currentChannel->handleEvent();                  // 调用handleEvent方法，这个方法根据channel的revent调用相应的callback
         }
         currentChannel = nullptr;
         eventHandling_ = false;
-        doRunInLoopFuncs();                     // 运行func_中等待事件
+        doRunInLoopFuncs();                                 // 运行func_中等待事件
     }
     looping_ = false;
 }
 
-void EventLoop::doRunInLoopFuncs()
+void EventLoop::doRunInLoopFuncs()                          // 就是在不停的调用Queue中函数
 {
     
     while(!func_.empty())
@@ -98,10 +98,10 @@ void EventLoop::quit()
 
 void EventLoop::queueInLoop(const Func &f)
 {
-    func_.enqueue(f);
+    func_.enqueue(f);                               // 异步入队列
     if(!isInLoopThread() || !looping_)
     {
-        wakeup();
+        wakeup();                                   // 激活poll，令其能够及时响应
     }
 }
 
@@ -231,9 +231,9 @@ void EventLoop::moveToCurrentThread()
         LOG_FATAL << "There is already an EventLoop\n";
         exit(-1);
     }
-    *threadLocalLoopPtr_ = nullptr;
+    *threadLocalLoopPtr_ = nullptr;                          
     tloopInThisThread = this;
-    threadLocalLoopPtr_ = &tloopInThisThread;
+    threadLocalLoopPtr_ = &tloopInThisThread;           
     threadId_ = std::this_thread::get_id();
 }
 
@@ -254,7 +254,7 @@ void EventLoop::removeChannel(Channel *channel)
 void EventLoop::wakeup()
 {
     uint64_t tmp = 1;
-    // if(!looping_)
+    // if(!looping_)                                // Queue有在EventLoop启动之前进行Fun插入的需要，所以不能加入这段代码
     //     return;
     write(wakeupFd_, &tmp, sizeof(tmp));
 }

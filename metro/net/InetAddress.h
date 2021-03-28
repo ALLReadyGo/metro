@@ -1,3 +1,6 @@
+/**
+ * 对sockaddr结构的封装，可以同时处理IPv4和Ipv6地址
+ */
 #pragma once
 #include <sys/socket.h>
 #include <arpa/inet.h>

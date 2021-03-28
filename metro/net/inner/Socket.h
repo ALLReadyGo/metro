@@ -1,3 +1,6 @@
+/**
+ * socket相关接口封装
+ */ 
 #pragma once
 #include <fcntl.h>
 #include "metro/net/InetAddress.h"

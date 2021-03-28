@@ -22,7 +22,7 @@ Connector::Connector(EventLoop *loop,
 void Connector::start()
 {
     connect_ = true;
-    loop_->runInLoop([this]() { startInLoop(); });
+    loop_->runInLoop([this]() { startInLoop(); });              // 启动连接
 }
 
 void Connector::restart()
@@ -43,20 +43,20 @@ void Connector::startInLoop()
     }
 }
 
-void Connector::connect()
+void Connector::connect()                                       // 实际的连接步骤
 {
-    int sockfd = Socket::createNonblockingSocketOrDie(serverAddr_.family());
+    int sockfd = Socket::createNonblockingSocketOrDie(serverAddr_.family());        // 启动一个非阻塞套接字
     errno = 0;
-    int ret = Socket::connect(sockfd, serverAddr_);
+    int ret = Socket::connect(sockfd, serverAddr_);             // 会立即返回
     int savedErrno = (ret == 0) ? 0 : errno;
     switch (savedErrno)
     {
         case 0:
         case EINPROGRESS:
         case EINTR:
-        case EISCONN:
+        case EISCONN:                                           // 如果连接的是回环地址，此时可能会直接连接上
             LOG_TRACE << "connecting";
-            connecting(sockfd);
+            connecting(sockfd);                                 // 一切正常
             break;
         case EAGAIN:
         case EADDRINUSE:
@@ -97,7 +97,7 @@ void Connector::connecting(int sockfd)
     status_ = Status::Connecting;
     assert(!channelPtr_);
     channelPtr_.reset(new Channel(loop_, sockfd));
-    channelPtr_->setWriteCallBack(std::bind(&Connector::handleWrite, shared_from_this()));
+    channelPtr_->setWriteCallBack(std::bind(&Connector::handleWrite, shared_from_this()));          // 设置write监听事件，如果一个socket连接状态返回，那么他的write监听会被激活
     channelPtr_->setErrorCallBack(std::bind(&Connector::handleError, shared_from_this()));
     channelPtr_->setCloseCallBack(std::bind(&Connector::handleError, shared_from_this()));
     channelPtr_->enableWriting();
@@ -117,13 +117,13 @@ void Connector::handleWrite()
 {
     if(status_ == Status::Connecting)
     {
-        int sockfd = removeAndResetChannel();
-        int err = Socket::getSocketError(sockfd);
+        int sockfd = removeAndResetChannel();                               // 移除相应的IOChannel
+        int err = Socket::getSocketError(sockfd);                           // 获取socket的错误码
         if(err)
         {
             if(retry_)
             {
-                retry(sockfd);
+                retry(sockfd);                                              // retry尝试
             }
             else
             {
@@ -151,10 +151,10 @@ void Connector::handleWrite()
         }
         else
         {
-            status_ = Status::Connected;
+            status_ = Status::Connected;                                // 连接成功
             if (connect_)
             {
-                newConnectionCallback_(sockfd);
+                newConnectionCallback_(sockfd);                         // 调用连接成功回调
             }
             else
             {
@@ -195,7 +195,7 @@ void Connector::retry(int sockfd)
     {
         loop_->runAfter(retryInterval_ / 1000.0,
                         std::bind(&Connector::startInLoop, shared_from_this()));
-        retryInterval_ = retryInterval_ * 2;
+        retryInterval_ = retryInterval_ * 2;                    // retryInterval会倍增，每次连接超时都会导致下一次的延迟增加
         if (retryInterval_ > maxRetryInterval_)
             retryInterval_ = maxRetryInterval_;
     }

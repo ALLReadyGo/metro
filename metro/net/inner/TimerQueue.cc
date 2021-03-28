@@ -26,7 +26,7 @@ static timespec howMuchTimeFromNow(const TimerPoint &when)
                             when - std::chrono::steady_clock::now()
                        ).count();
     
-    if(microsecond < 100)
+    if(microsecond < 100)                                                  // 这里做了个优化，避免间距过短造成的频繁调度
         microsecond = 100;
     
     timespec sp;
@@ -41,7 +41,7 @@ static void resetTimerfd(int timerfd, const TimerPoint &expiration)
     struct itimerspec oldValue;
     memset(&newValue, 0, sizeof(newValue));
     memset(&oldValue, 0, sizeof(oldValue));
-    newValue.it_value = howMuchTimeFromNow(expiration);
+    newValue.it_value = howMuchTimeFromNow(expiration);                 // 获取下次激活时间，这里获得的是距离下次激活的时间差
     int ret = ::timerfd_settime(timerfd, 0, &newValue, &oldValue);
     if (ret)
     {
@@ -76,13 +76,16 @@ TimerQueue::~TimerQueue()
     
 }
 
+/*
+ * 
+*/
 TimerId TimerQueue::addTimer(const TimerCallback &callback, 
                     const TimerPoint &when,
                     const TimerInterval &interval)
 {
     TimerPtr timer_ptr = std::make_shared<Timer>(
                 callback, when, interval);
-    loop_->runInLoop([this, timer_ptr](){
+    loop_->runInLoop([this, timer_ptr](){                   // 这里使用异步队列调用，addTimer是线程安全的
         addTimerInLoop(timer_ptr);
     });
     return timer_ptr->id();
@@ -102,7 +105,7 @@ TimerId TimerQueue::addTimer(const TimerCallback &&callback,
 
 bool TimerQueue::insert(const TimerPtr &timerPtr)
 {
-    bool flesh_timerfd = false;
+    bool flesh_timerfd = false;                                     // 是否需要重新设置定时时间
     if(timers_.empty() || timerPtr->when() < timers_.top()->when())
     {   
         flesh_timerfd = true;
@@ -113,21 +116,22 @@ bool TimerQueue::insert(const TimerPtr &timerPtr)
 
 void TimerQueue::addTimerInLoop(const TimerPtr &timerPtr)
 {
-    if(timerPtr->when() < std::chrono::steady_clock::now())         
+    if(timerPtr->when() < std::chrono::steady_clock::now())            // 插入时已经超期，就直接执行
     {
         timerPtr->run();
     }
     assert(timerIdSet_.find(timerPtr->id()) == timerIdSet_.end());
-    timerIdSet_.insert(timerPtr->id());
-    if(insert(timerPtr))
+    timerIdSet_.insert(timerPtr->id());                                // timerIdset_保存了所有的可用的TimerID
+    if(insert(timerPtr))                                               // insert()函数会在需要更新timerQueue最早时间时返回true
     {   
         resetTimerfd(timerfd_, timerPtr->when());
     }
 }
 
+/* 取消之前设置的定时只会从timerIdSet_中移除相应的id，而不会对queue内部元素进行删除，这样的设置能够保证程序的高效执行*/
 void TimerQueue::invalidTimer(TimerId id)
 {
-    loop_->runInLoop([this, id]() { timerIdSet_.erase(id); });
+    loop_->runInLoop([this, id]() { timerIdSet_.erase(id); });          
 }
 
 void TimerQueue::reset(const std::vector<TimerPtr> &expired, const TimerPoint &now)
@@ -137,21 +141,20 @@ void TimerQueue::reset(const std::vector<TimerPtr> &expired, const TimerPoint &n
         TimerId id = it->id();
         if(timerIdSet_.find(id) != timerIdSet_.end())
         {
-            if(it->isRepeat())
+            if(it->isRepeat())                              // repeate的话自动设置下次调用时间点
             {
                 it->restart(now);
                 insert(it);
             }
             else
             {
-                timerIdSet_.erase(id);
+                timerIdSet_.erase(id);                      // 不是的话，从列表中删除
             }
         }
-        
     }
     if(!timerIdSet_.empty())
     {
-        TimerPoint next_expired = timers_.top()->when();
+        TimerPoint next_expired = timers_.top()->when();    // 获取下次最新的调度时间点
         resetTimerfd(timerfd_, next_expired);
     }
 }
@@ -170,19 +173,20 @@ std::vector<TimerPtr> TimerQueue::getExpired(const TimerPoint &now)
     return expired_timer;
 }
 
+// Timerfd 的 callback回调事件
 void TimerQueue::handleRead()
 {
     auto now = std::chrono::steady_clock::now();
-    std::vector<TimerPtr> expired_timer = getExpired(now);
+    std::vector<TimerPtr> expired_timer = getExpired(now);  // 获取所有过期的Timer
     for(auto &it : expired_timer)
     {
         TimerId id = it->id();
-        if(timerIdSet_.find(id) != timerIdSet_.end())
+        if(timerIdSet_.find(id) != timerIdSet_.end())       // 这里的判断是为了配合invalid操作，保证只调用那些仍然可用的Timer
         {
-            it->run();    
+            it->run();                                      // 执行Timer的callback
         }
     }
-    reset(expired_timer, now);
+    reset(expired_timer, now);                              // 重置这些Timer
 }
 
 }

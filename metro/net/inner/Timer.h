@@ -1,3 +1,8 @@
+/***
+ * Timer结构，与TimerQueue结合使用，共同完成定时器功能
+ * 
+ */
+
 #pragma once
 
 #include <functional>
@@ -42,7 +47,8 @@ class Timer : public NonCopyable
     {
         return id_;
     }
-
+    /* 这两个操作符的设置保证了其在std的sortable*/
+    
     bool operator<(const Timer &other) const
     {
         return when_ < other.when_;
@@ -55,11 +61,16 @@ class Timer : public NonCopyable
 
   private:
     TimerCallback callback_;
-    const TimerId id_;
-    TimerPoint when_;
+    const TimerId id_;                  //   Timer的id
+    TimerPoint when_;                   //   Timer的调用时间点
     TimerInterval interval_;
     bool repeat_;
-    static std::atomic<TimerId> timersCreated;
+    /*
+     * 这个表示创建了多少个timerid，关于timerid的生成机制，其实就是一个不断自增的数
+     * ，因为数值很大，如果timer定时都是那种很短的，正常情况下不会出现timer重复问题，但是临界情况下并不是百分百安全
+    */
+    static std::atomic<TimerId> timersCreated;          
+    
 };
 
 

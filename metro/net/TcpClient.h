@@ -1,3 +1,8 @@
+/**
+ * client的连接动作是自动执行的
+ * 当连接成功时，其注册的connectioncallback会被调用，我们注册的writecallback和readcallback都是针对连接完成的
+ * TcpConnection进行设置的
+ */
 #pragma once
 #include "metro/net/EventLoop.h"
 #include "metro/utils/NonCopyable.h"
@@ -17,7 +22,7 @@ class TcpClient : public NonCopyable
     
     ~TcpClient();
 
-    void connect();
+    void connect();                                             //启动连接
 
     void disconnect();
 
@@ -84,7 +89,7 @@ class TcpClient : public NonCopyable
     void removeConnection(const TcpConnectionPtr &connPtr);
 
     EventLoop *loop_;
-    ConnectorPtr connector_;
+    ConnectorPtr connector_;                                             // 连接器
     const std::string name_;
     ConnectionCallback connectionCallback_;
     ConnectionErrorCallback connectionErrorCallback_;
@@ -95,7 +100,7 @@ class TcpClient : public NonCopyable
     std::atomic_bool connect_;
 
     mutable std::mutex mutex_;
-    TcpConnectionPtr connection_;
+    TcpConnectionPtr connection_;                                       // 连接成功之后的，TcpConnection
 };
 
 

@@ -1,3 +1,7 @@
+/**
+ * Poller的虚基类，用于对EpollPoller进行抽象，提供这个基类的作用是屏蔽不同操作系统下poll结构的差异，
+ * 具体的Poller可以由kQueue、Select等结构实现
+ */
 #pragma once
 #include "metro/net/Channel.h"
 #include "metro/utils/NonCopyable.h"

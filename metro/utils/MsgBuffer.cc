@@ -189,13 +189,14 @@ void MsgBuffer::addInFroundInt64(const uint64_t l)
     addInFront(static_cast<char *>((void *)&in), sizeof(in));
 }
 
+
 void MsgBuffer::retrieveAll()
 {
     if(buffer_.size() > (initCap_ * 2))
     {
         buffer_.resize(initCap_);
     }
-    tail_ = head_ = kBufferOffset;
+    tail_ = head_ = kBufferOffset;                 // 如果数据全部取出完毕，head_不要忘记重置回头部
 }
 
 void MsgBuffer::retrieve(size_t len)
@@ -208,10 +209,11 @@ void MsgBuffer::retrieve(size_t len)
     head_ += len;
 }
 
+/* 从fd中读取数据到buffer当中，socket中的数据获取就是通过这个API进行的 */
 ssize_t MsgBuffer::readFd(int fd, int *retError)
 {
     char exBuffer[8192];
-    struct iovec vec[2];
+    struct iovec vec[2];                        // 使用两个缓冲区进行数据读取，保证能够及时从socket中取出数据，大吞吐量数据传输时很有必要
     size_t writable = writableBytes();
     vec[0].iov_base = begin() + tail_;
     vec[0].iov_len = writable;
@@ -223,13 +225,13 @@ ssize_t MsgBuffer::readFd(int fd, int *retError)
     {
         *retError = errno;
     }
-    else if(n <= writable)
+    else if(n <= writable)                      // 不需要exBuffer
     {
         tail_ += n;
     }
     else
     {
-        tail_ = buffer_.size();
+        tail_ = buffer_.size();                 // 此时exBuffer被使用
         append(exBuffer, n - writable);
     }
     return n;

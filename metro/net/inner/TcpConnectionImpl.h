@@ -180,7 +180,7 @@ class TcpConnectionImpl : public TcpConnection,
             auto conn = conn_.lock();
             if(conn)
             {
-                conn->forceClose();
+                conn->forceClose();                             // 当他析构时，会自动执行forceclose
             }
         }
       private:
@@ -188,8 +188,8 @@ class TcpConnectionImpl : public TcpConnection,
     };
 
     /* kickoff */
-    std::weak_ptr<KickoffEntry> kickoffEntry_;
-    std::weak_ptr<TimingWheel> timingWheelWeakPtr_;
+    std::weak_ptr<KickoffEntry> kickoffEntry_;                  
+    std::weak_ptr<TimingWheel> timingWheelWeakPtr_;             // timingWheel,用于实现自动关闭长时间未连接的socket
     size_t idleTimeout_;
     Date lastTimingWheelUpdateTime_;
     
@@ -199,10 +199,10 @@ class TcpConnectionImpl : public TcpConnection,
         assert(timingWheel);
         assert(timingWheel->getLoop() == loop_);
         assert(timeout > 0);
-        auto entry = std::make_shared<KickoffEntry>(shared_from_this());
+        auto entry = std::make_shared<KickoffEntry>(shared_from_this());      // entry是一个shared_ptr，所有的shared_ptr都消失时会调用KickoffEntry的析构
         kickoffEntry_ = entry;
         idleTimeout_ = timeout;
-        timingWheel->insertEntry(timeout, entry);
+        timingWheel->insertEntry(timeout, entry);                             // 其被插入到timingwheel中
     }
 
     void extendLife()
@@ -219,7 +219,7 @@ class TcpConnectionImpl : public TcpConnection,
             auto timingWheelPtr = timingWheelWeakPtr_.lock();
             if(timingWheelPtr)
             {
-                timingWheelPtr->insertEntry(idleTimeout_, timingWheelPtr);
+                timingWheelPtr->insertEntry(idleTimeout_, timingWheelPtr);      // 再次插入自身
             }
         }
     }
@@ -230,28 +230,29 @@ class TcpConnectionImpl : public TcpConnection,
     /* send */
     void sendInLoop(const char *buffer, size_t length);
 
-    EventLoop *loop_;
-    std::unique_ptr<Channel> ioChannelPtr_;
+    EventLoop *loop_;                                   // 相应的管理EventLoop
+    std::unique_ptr<Channel> ioChannelPtr_;             // 负责进行数据接收、发送的Channel
     std::unique_ptr<Socket> socketPtr_;
-    MsgBuffer readBuffer_;
-    std::list<BufferNodePtr> writeBufferList_;
+    MsgBuffer readBuffer_;                              // 读取的缓冲区
+    /*
+     * ioChannel的写入缓冲是BufferNode链表
+     * 这种结构的原因是我们需要实现sendfile，因此buffer中需要缓冲两种类型的对象，一个是内存数据缓冲区、还有一个是fd的控制节点
+    */
+    std::list<BufferNodePtr> writeBufferList_;          
     // ioChannel Callback
-    void readCallback();
-    void writeCallback();
+    void readCallback();                                // ioChannel的readcallback：当有数据到达时，不停地向readBuffer_中写入数据
+    void writeCallback();                               //            writecallback: 当write事件激活时，如果writeBufferList中存在数据时，我们就不停地向socket内写入
     InetAddress localAddr_, peerAddr_;
     ConnStatus status_{ConnStatus::Connecting};
 
-    // establish
-    
-
     // callback
-    RecvMessageCallback recvMsgCallback_;
-    ConnectionCallback connectionCallback_;
-    CloseCallback closeCallback_;
+    RecvMessageCallback recvMsgCallback_;               // 外部设置的callback，会在readCallback中被调用
+    ConnectionCallback connectionCallback_;             // TcpConnection初始化完毕的callback
+    CloseCallback closeCallback_;                       // 连接关闭callback
     WriteCompleteCallback writeCompleteCallback_;
     // high water
-    size_t highWaterMarkLen_;
-    HighWaterMarkCallback highWaterMarkCallback_;
+    size_t highWaterMarkLen_;                           // 回调阈值
+    HighWaterMarkCallback highWaterMarkCallback_;       // 接收缓冲区数据过多时执行的callback
 
     void handleClose();
     void handleError();

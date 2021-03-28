@@ -1,3 +1,14 @@
+/*
+ * Channel： IO调度块，提供了面向Eventloop和Channel使用者的两部分调用接口
+ * 1、面向Eventloop
+ *    handleEvent()
+ *      : 当Channel从EventLoop中因为read、write、error事件激活时，EventLoop会对channel执行此函数，自动执行相应的回调函数
+ *        这些回调函数都被保存在Channel的内部成员的各种Callback当中
+ * 2、面向Channel使用者
+ *      update()
+ *      ：向EventLoop中注册想要监听的事件，其也可以进行事件取消
+ *  
+ */
 #pragma once
 #include <memory>
 #include <functional>
@@ -158,7 +169,6 @@ class Channel : public NonCopyable
   private:
 
     friend class EpollPoller;
-    friend void Test();             // Test:
     friend class EventLoop;
     void update();
     void handleEvent();
@@ -180,15 +190,16 @@ class Channel : public NonCopyable
         index_ = index;
     }
 
-    EventLoop *loop_;
-    const int fd_;
-    int events_ = kNoneEvent;
-    int revents_ = kNoneEvent;
-    int index_ = 0;             
+    EventLoop *loop_;                       // Channel 所绑定的EventLoop
+    const int fd_;                          // Channel绑定的文件描述符
+    int events_ = kNoneEvent;               // Channel设置的监听事件
+    int revents_ = kNoneEvent;              // Channel执行完poll操作之后返回的激活事件
+    int index_ = 0;                         // 用于标记channel是否被加入epoll当中
     
     bool addedInLoop_{false};
 
-    EventCallBack readCallBack_;
+    /* 各种Callback */
+    EventCallBack readCallBack_;            
     EventCallBack writeCallBack_;
     EventCallBack errorCallBack_;
     EventCallBack closeCallBack_;

@@ -1,5 +1,7 @@
 #pragma once
-
+/**
+ * EventLoopThread 线程池
+ */
 #include "metro/net/EventLoopThread.h"
 #include "metro/utils/NonCopyable.h"
 
@@ -28,7 +30,7 @@ class EventLoopThreadPool : public NonCopyable
 
   private:
     std::vector<std::shared_ptr<EventLoopThread>> loopThreadVector_;
-    size_t loopIndex_;
+    size_t loopIndex_;                    // 结合getNextLoop使用，用于循环返回eventloop
 };
 
 }

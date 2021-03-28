@@ -37,7 +37,7 @@ void Channel::handleEvent()
     }
 }
 
-void Channel::handleEventFree()
+void Channel::handleEventFree()             // 根据revent进行callback回调
 {
     if(eventCallBack_)
     {

@@ -1,3 +1,7 @@
+/**
+ * socket连接器
+ */
+
 #pragma once
 
 #include "metro/net/Channel.h"
@@ -16,7 +20,7 @@ class Connector : public NonCopyable,
                   public std::enable_shared_from_this<Connector>
 {
   public:
-    using NewConnetionCallback = std::function<void(int sockfd)>;
+    using NewConnetionCallback = std::function<void(int sockfd)>;               
     using ConnetionErrorCallback = std::function<void()>;
 
     Connector(EventLoop *loop, const InetAddress &addr, bool retry = true);
@@ -60,8 +64,8 @@ class Connector : public NonCopyable,
         Connecting,
         Connected
     };
-    static constexpr int kMaxRetryDelayMs = 30 * 1000;
-    static constexpr int kInitRetryDelayMs = 500;
+    static constexpr int kMaxRetryDelayMs = 30 * 1000;          // 最大重连时间
+    static constexpr int kInitRetryDelayMs = 500;               // 重连延迟
     std::shared_ptr<Channel> channelPtr_;
     EventLoop *loop_;
     InetAddress serverAddr_;
@@ -72,8 +76,8 @@ class Connector : public NonCopyable,
     int retryInterval_{kInitRetryDelayMs};
     int maxRetryInterval_{kMaxRetryDelayMs};
 
-    bool retry_;
-    void startInLoop();
+    bool retry_;                                                // 是否尝试重连
+    void startInLoop();                                         
     void connect();
     void connecting(int sockfd);
     int removeAndResetChannel();

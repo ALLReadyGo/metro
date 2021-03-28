@@ -1,3 +1,6 @@
+/**
+ * 对linux下时间的封装，用于log
+ */
 #pragma once
 
 #include <ctime>

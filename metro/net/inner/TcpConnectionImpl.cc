@@ -19,15 +19,15 @@ TcpConnectionImpl::TcpConnectionImpl(EventLoop *loop,
     peerAddr_(peerAddr)
 {
     ioChannelPtr_->setReadCallBack(
-        std::bind(&TcpConnectionImpl::readCallback, this));
+        std::bind(&TcpConnectionImpl::readCallback, this));             // 设置ioChannel的read
     ioChannelPtr_->setWriteCallBack(
-        std::bind(&TcpConnectionImpl::writeCallback, this));
+        std::bind(&TcpConnectionImpl::writeCallback, this));            // write回调
     ioChannelPtr_->setCloseCallBack(
-        std::bind(&TcpConnectionImpl::handleClose, this));
+        std::bind(&TcpConnectionImpl::handleClose, this));              
     ioChannelPtr_->setErrorCallBack(
         std::bind(&TcpConnectionImpl::handleError, this));
     socketPtr_->setKeepAlive(true);                                     // 设置socket keep alive
-    name_ = localAddr.toIpPort() + "--" + peerAddr.toIpPort();
+    name_ = localAddr.toIpPort() + "--" + peerAddr.toIpPort();          // 注意此时，TcpConnection还没有完全启动，其需要调用connectEstablished()才会启动
 }
 
 TcpConnectionImpl::~TcpConnectionImpl()
@@ -38,7 +38,7 @@ void TcpConnectionImpl::readCallback()
 {
     loop_->assertInLoopThread();
     int ret = 0;
-    ssize_t n = readBuffer_.readFd(socketPtr_->fd(), &ret);
+    ssize_t n = readBuffer_.readFd(socketPtr_->fd(), &ret);             // 从socket中读取数据到buffer
     if(n == 0)
     {
         handleClose();
@@ -56,7 +56,7 @@ void TcpConnectionImpl::readCallback()
     {
         extendLife();
         bytesReceived_ += n;
-        if(recvMsgCallback_)
+        if(recvMsgCallback_)                                            // 调用recvMsgCallback_，外部对read事件的回调都是通过设置这个接口实现的
         {
             recvMsgCallback_(shared_from_this(), &readBuffer_);
         }
@@ -297,9 +297,9 @@ void TcpConnectionImpl::connectEstablished()
     loop_->runInLoop([thisPtr]() {
         assert(thisPtr->status_ == ConnStatus::Connecting);
         thisPtr->ioChannelPtr_->tie(thisPtr);
-        thisPtr->ioChannelPtr_->enableReading();
+        thisPtr->ioChannelPtr_->enableReading();                // 此时才打开read事件监听
         thisPtr->status_ = ConnStatus::Connected;
-        if (thisPtr->connectionCallback_)
+        if (thisPtr->connectionCallback_)                       // 调用连接成功回调
             thisPtr->connectionCallback_(thisPtr);
     });
 }

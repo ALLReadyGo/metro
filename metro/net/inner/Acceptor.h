@@ -35,8 +35,8 @@ class Acceptor
     
 
   private:
-    int idleFd_;
-    Socket sock_;
+    int idleFd_;                                          // fd占位， 用于file文件描述符耗尽时，关闭acceptor连接时调用
+    Socket sock_;                                         
     InetAddress addr_;
     EventLoop *loop_;
     NewConnectionCallback newConnectionCallback_;

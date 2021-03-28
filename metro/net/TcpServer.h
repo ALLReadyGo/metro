@@ -98,14 +98,15 @@ class TcpServer : NonCopyable
     void newConnection(int fd, const InetAddress &peer);
     std::string serverName_;
     std::set<TcpConnectionPtr> connSet_;
-
-    RecvMessageCallback recvMessageCallback_;
+    
+    // TcpConnection 的callback
+    RecvMessageCallback recvMessageCallback_;                       
     ConnectionCallback connectionCallback_;
     WriteCompleteCallback writeCompleteCallback_;
     size_t idleTimeOut_{0};
     std::map<EventLoop *, std::shared_ptr<TimingWheel>> timingWheelMap_;
     void connectionClosed(const TcpConnectionPtr &connPtr);
-    std::shared_ptr<EventLoopThreadPool> loopPoolPtr_;
+    std::shared_ptr<EventLoopThreadPool> loopPoolPtr_;                          // threadpool
 
 
 };

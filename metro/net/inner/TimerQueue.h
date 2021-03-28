@@ -26,6 +26,7 @@ class TimerQueue : NonCopyable
     explicit TimerQueue(EventLoop *loop);
     ~TimerQueue();
 
+    // 向TimerQueue中添加新的Callback事件
     TimerId addTimer(const TimerCallback &callback, 
                      const TimerPoint &when,
                      const TimerInterval &interval);
@@ -46,7 +47,7 @@ class TimerQueue : NonCopyable
     int timerfd_;
     std::shared_ptr<Channel> timerfdChannelPtr_;
 
-    std::priority_queue<TimerPtr, std::vector<TimerPtr>, ComparerTimerPtr> timers_;
+    std::priority_queue<TimerPtr, std::vector<TimerPtr>, ComparerTimerPtr> timers_;   // 优先队列，总是将最早到期的Timer放置在最前头
     bool callingExpiredTimers_ = false;
     bool insert(const TimerPtr &timerPtr);
     void reset(const std::vector<TimerPtr> &expired, const TimerPoint &now);

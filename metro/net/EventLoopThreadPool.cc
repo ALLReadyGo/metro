@@ -17,7 +17,7 @@ void EventLoopThreadPool::EventLoopThreadPool::start()
 {
     for(size_t i = 0; i < loopThreadVector_.size(); ++i)
     {
-        loopThreadVector_[i]->run();
+        loopThreadVector_[i]->run();                            // 运行线程池的每个eventLoop
     }
 }
 

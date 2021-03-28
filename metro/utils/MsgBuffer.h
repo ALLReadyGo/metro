@@ -1,3 +1,7 @@
+/**
+ * MsgBuffer，自定义的可动态扩充的缓冲区 
+ * 需要注意的是这里的所有buffer数据均是网络字节序big endian，所以readInt16、32、64都会进行字节序的变化操作
+ */
 #pragma once
 
 #include <metro/utils/NonCopyable.h>
@@ -154,9 +158,9 @@ class MsgBuffer
 
   private:
 
-    size_t head_;
-    size_t initCap_;
-    std::vector<char> buffer_;
+    size_t head_;                           // 标记头部位置,read时这个head_会向后移动
+    size_t initCap_;                        // 初始化大小
+    std::vector<char> buffer_;              // 缓冲区，数据存储位置
     size_t tail_;
     const char *begin() const
     {

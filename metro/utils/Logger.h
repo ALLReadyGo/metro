@@ -1,3 +1,6 @@
+/**
+ * 实现的一个简易logger，现阶段只能往单一输出源进行显式
+ */
 #pragma once
 #include "metro/utils/LogStream.h"
 #include <functional>

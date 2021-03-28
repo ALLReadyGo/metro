@@ -29,7 +29,7 @@ TcpClient::TcpClient(EventLoop *loop,
     connect_(true)
 {
     connector_->setNewConnectionCallback(
-        std::bind(&TcpClient::newConnection, this, _1));
+        std::bind(&TcpClient::newConnection, this, _1));            // connector连接成功的callback绑定了tcpconnection的初始化
     connector_->setConnetionErrorCallback([this](){
         if(connectionErrorCallback_)
         {
@@ -91,11 +91,11 @@ void TcpClient::newConnection(int sockfd)
     InetAddress peerAddr(Socket::getPeerAddr(sockfd));
     InetAddress localAddr(Socket::getLocalAddr(sockfd));
     std::shared_ptr<TcpConnectionImpl> conn;
-    conn = std::make_shared<TcpConnectionImpl>(loop_,
+    conn = std::make_shared<TcpConnectionImpl>(loop_,                                   // 初始化TcpConnection
                                                sockfd,
                                                localAddr,
                                                peerAddr);
-    conn->setConnectionCallback(connectionCallback_);
+    conn->setConnectionCallback(connectionCallback_);                                   // 初始化时注册的connection回调在这里发生
     conn->setRecvMsgCallback(recvMessageCallback_);
     conn->setWriteCompleteCallback(writeCompleteCallback_);
     conn->setCloseCallback(std::bind(&TcpClient::removeConnection, this, _1));

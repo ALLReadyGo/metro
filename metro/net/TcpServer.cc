@@ -27,7 +27,7 @@ void TcpServer::newConnection(int fd, const InetAddress &peer)
     EventLoop *ioLoop = nullptr;
     if(loopPoolPtr_ && loopPoolPtr_->size() > 0)
     {
-        ioLoop = loopPoolPtr_->getNextLoop();
+        ioLoop = loopPoolPtr_->getNextLoop();                   // 并不是驻留在acceptor的poll，而是从threadpoll中获取eventloop，这样能更有效地处理连接请求
     }
     else
     {
@@ -35,7 +35,7 @@ void TcpServer::newConnection(int fd, const InetAddress &peer)
     }
     std::shared_ptr<TcpConnectionImpl> newPtr = std::make_shared<TcpConnectionImpl>(
         ioLoop, fd, InetAddress(Socket::getLocalAddr(fd)), peer);
-    if(idleTimeOut_ > 0)
+    if(idleTimeOut_ > 0)                                        // 设置socket超时器
     {
         newPtr->enableKickoffEntry(idleTimeOut_, timingWheelMap_[ioLoop]);
     }
@@ -54,7 +54,7 @@ void TcpServer::newConnection(int fd, const InetAddress &peer)
         });
     newPtr->setCloseCallback(std::bind(&TcpServer::connectionClosed, this, _1));
     connSet_.insert(newPtr);
-    newPtr->connectEstablished();
+    newPtr->connectEstablished();                              // 激活newPtr
 
 }
 
@@ -66,7 +66,7 @@ void TcpServer::start()
         started_ = true;
         if(idleTimeOut_ > 0)
         {
-            timingWheelMap_[loop_] =
+            timingWheelMap_[loop_] =                                    // 初始化timingwheel
                 std::make_shared<TimingWheel>(loop_,
                                               idleTimeOut_,
                                               1.0F,

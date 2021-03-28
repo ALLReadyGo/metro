@@ -1,3 +1,7 @@
+/**
+ * 用于启动EventLoop线程，这里涉及到需要promise操作，其目的是为了控制线程执行流程
+ *
+ */
 #pragma once
 #include "metro/net/EventLoop.h"
 #include <thread>
@@ -12,10 +16,10 @@ class EventLoopThread
     explicit EventLoopThread(const std::string &threadName);
     ~EventLoopThread();
 
-    void run();
+    void run();                 // 创建完成并不会直接运行，而是需要显式调用run，thread才会运行
     void wait();
 
-    EventLoop *getLoop();
+    EventLoop *getLoop();       
 
   private:
     EventLoop *loop_;

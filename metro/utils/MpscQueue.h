@@ -1,5 +1,7 @@
 #pragma once
-
+/**
+ * 实现的异步安全队列，原作者实现的是一个lock free结构，我这里设计简单，只是利用了mutex进行了简单实现
+ */
 #include <mutex>
 #include <list>
 template<typename T>

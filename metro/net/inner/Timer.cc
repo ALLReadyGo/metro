@@ -11,7 +11,7 @@ Timer::Timer(const TimerCallback &callback,
     : callback_(callback),
       when_(when), 
       interval_(interval),
-      id_(++timersCreated),
+      id_(++timersCreated),                 // timeid 生成
       repeat_(interval != std::chrono::microseconds(0))
 {
 }

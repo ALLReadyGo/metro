@@ -1,3 +1,6 @@
+/**
+ *  某些用到的额外函数，这里仅是一个splitString函数
+ */
 #pragma once
 #include <string>
 #include <vector>
