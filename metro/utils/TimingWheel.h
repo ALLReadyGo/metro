@@ -28,10 +28,10 @@ class TimingWheel
         }
         ~CallbackEntry()
         {
-            cb_();
+            cb_();                                      // CallbackEntry析构时会自动调用callback
         }
       private:
-        std::function<void()> cb_;
+        std::function<void()> cb_;                      // 析构callback
     };
 
     TimingWheel(EventLoop *loop, 
